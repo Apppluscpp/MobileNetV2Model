@@ -82,7 +82,30 @@ if uploaded:
     st.markdown(f"### Prediction: {label}")
     st.metric("Confidence", f"{confidence:.2%}")
 
-    # Show morphology features
     if st.checkbox("Show Morphology Features"):
+        features = extract_morphology_features(processed[0])
+        st.json(features)
+
+# ---------------------- Realtime Camera Input ----------------------
+st.markdown("---")
+st.header("📷 Real-Time Camera Inference")
+camera_img = st.camera_input("Take a photo")
+
+if camera_img:
+    file_bytes = np.asarray(bytearray(camera_img.read()), dtype=np.uint8)
+    image_bgr = cv2.imdecode(file_bytes, 1)
+    original_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+    st.image(original_rgb, caption="Captured Image", use_column_width=True)
+
+    processed = preprocess_image(image_bgr)
+    prediction = model.predict(processed)[0][0]
+
+    label = "🔴 Defective" if prediction >= threshold else "🟢 Proper"
+    confidence = prediction if prediction >= threshold else 1 - prediction
+
+    st.markdown(f"### Camera Prediction: {label}")
+    st.metric("Confidence", f"{confidence:.2%}")
+
+    if st.checkbox("Show Morphology Features (Camera)"):
         features = extract_morphology_features(processed[0])
         st.json(features)
