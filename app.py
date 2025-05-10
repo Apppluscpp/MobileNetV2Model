@@ -122,7 +122,7 @@ if camera_img:
 
     st.markdown(f"### Camera Prediction: {label}")
     st.metric("Confidence", f"{confidence:.2%}")
-    st.progress(prediction)
+    st.progress(float(prediction))
     st.image(processed_rgb, caption="Preprocessed Camera Image", use_column_width=True)
 
     if st.checkbox("Show Morphology Features (Camera)"):
