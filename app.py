@@ -44,9 +44,9 @@ def preprocess_image(img):
         cl = clahe.apply(l)
         img = cv2.merge((cl, a, b))
         img = cv2.cvtColor(img, cv2.COLOR_LAB2BGR)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = img.astype(np.float32) / 255.0
-    return np.expand_dims(img, axis=0)
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img_norm = img_rgb.astype(np.float32) / 255.0
+    return np.expand_dims(img_norm, axis=0), img_rgb
 
 # ---------------------- Morphology Feature Extraction ----------------------
 def extract_morphology_features(image):
@@ -63,7 +63,7 @@ def extract_morphology_features(image):
         "avg_blob_area": np.mean(blob_areas) if blob_areas else 0,
         "max_blob_area": max(blob_areas) if blob_areas else 0,
         "blob_area_ratio": total_blob_area / (gray.shape[0] * gray.shape[1])
-    }
+    }, cleaned
 
 # ---------------------- File Upload and Inference ----------------------
 uploaded = st.file_uploader("Upload image", type=["jpg", "jpeg", "png"])
@@ -73,7 +73,7 @@ if uploaded:
     original_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
     st.image(original_rgb, caption="Original Image", use_column_width=True)
 
-    processed = preprocess_image(image_bgr)
+    processed, processed_rgb = preprocess_image(image_bgr)
     prediction = model.predict(processed)[0][0]
 
     label = "🔴 Defective" if prediction >= threshold else "🟢 Proper"
@@ -81,10 +81,12 @@ if uploaded:
 
     st.markdown(f"### Prediction: {label}")
     st.metric("Confidence", f"{confidence:.2%}")
+    st.image(processed_rgb, caption="Preprocessed Image", use_column_width=True)
 
     if st.checkbox("Show Morphology Features"):
-        features = extract_morphology_features(processed[0])
+        features, morph_image = extract_morphology_features(processed[0])
         st.json(features)
+        st.image(morph_image, caption="Morphology (Binary) Image", use_column_width=True, channels="GRAY")
 
 # ---------------------- Realtime Camera Input ----------------------
 st.markdown("---")
@@ -97,7 +99,7 @@ if camera_img:
     original_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
     st.image(original_rgb, caption="Captured Image", use_column_width=True)
 
-    processed = preprocess_image(image_bgr)
+    processed, processed_rgb = preprocess_image(image_bgr)
     prediction = model.predict(processed)[0][0]
 
     label = "🔴 Defective" if prediction >= threshold else "🟢 Proper"
@@ -105,7 +107,9 @@ if camera_img:
 
     st.markdown(f"### Camera Prediction: {label}")
     st.metric("Confidence", f"{confidence:.2%}")
+    st.image(processed_rgb, caption="Preprocessed Camera Image", use_column_width=True)
 
     if st.checkbox("Show Morphology Features (Camera)"):
-        features = extract_morphology_features(processed[0])
+        features, morph_image = extract_morphology_features(processed[0])
         st.json(features)
+        st.image(morph_image, caption="Camera Morphology (Binary) Image", use_column_width=True, channels="GRAY")
