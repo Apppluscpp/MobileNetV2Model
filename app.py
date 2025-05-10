@@ -1,44 +1,42 @@
-# app.py
 import streamlit as st
 import numpy as np
+import tensorflow as tf
 import cv2
-from tensorflow.keras.models import load_model
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-import tempfile
-import os
 
-# Title
-st.title("Defective vs Proper Image Classifier")
+st.set_page_config(page_title="Defect Detector", layout="centered")
+st.title("🛠️ Defect Detection with MobileNetV2")
 
-# Upload image
-uploaded_file = st.file_uploader("Upload an image", type=['jpg', 'jpeg', 'png'])
-
-# Load model (assumes you’ve saved it as 'mobilenetv2_finetuned.h5')
+# Load model from unzipped folder
 @st.cache_resource
-def load_mymodel():
-    model = load_model("mobilenetv2_finetuned.h5")
+def load_model():
+    model = tf.keras.models.load_model("mobilenetv2_finetuned")
     return model
 
-model = load_mymodel()
+model = load_model()
 
-# Preprocess function
+# Preprocessing function
 def preprocess_image(img):
-    img = cv2.resize(img, (224, 224))
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = preprocess_input(img.astype(np.float32))
-    return np.expand_dims(img, axis=0)
+    img = cv2.resize(img, (224, 224))            # Resize to model input size
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)   # Convert BGR to RGB
+    img = img.astype(np.float32) / 255.0         # Normalize to [0, 1]
+    return np.expand_dims(img, axis=0)           # Add batch dimension
 
-# Run prediction
-if uploaded_file is not None:
+# File uploader UI
+uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+
+if uploaded_file:
+    # Read and decode image
     file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    img = cv2.imdecode(file_bytes, 1)
+    image = cv2.imdecode(file_bytes, 1)  # Load as BGR
 
-    st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), caption="Uploaded Image", use_column_width=True)
+    st.image(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), caption="Uploaded Image", use_column_width=True)
 
-    processed = preprocess_image(img)
-    prediction = model.predict(processed)[0][0]
-    label = "Defective" if prediction >= 0.5 else "Proper"
+    # Predict
+    preprocessed = preprocess_image(image)
+    prediction = model.predict(preprocessed)[0][0]  # Get sigmoid output
 
-    st.markdown(f"### Prediction: `{label}`")
-    st.markdown(f"Confidence: `{prediction:.2f}`")
+    label = "🟥 Defective" if prediction >= 0.5 else "🟩 Proper"
+    confidence = prediction if prediction >= 0.5 else 1 - prediction
 
+    st.markdown(f"### Prediction: {label}")
+    st.markdown(f"**Confidence:** {confidence:.2%}")
