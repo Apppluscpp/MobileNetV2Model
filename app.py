@@ -9,11 +9,14 @@ from tensorflow.keras.models import Model
 st.set_page_config(page_title="Defect Detection", layout="centered")
 st.title("🛠️ MobileNetV2 Defect Detector")
 
-# ---------------------- UI Controls ----------------------
-clahe_enabled = st.checkbox("Apply CLAHE", value=True)
-clip_limit = st.slider("CLAHE Clip Limit", 1.0, 5.0, 2.0)
-tile_size = st.slider("CLAHE Tile Size", 4, 16, 8)
-threshold = st.slider("Prediction Threshold", 0.0, 1.0, 0.5)
+# ---------------------- Sidebar UI Controls ----------------------
+st.sidebar.header("🔧 Preprocessing Options")
+clahe_enabled = st.sidebar.checkbox("Apply CLAHE", value=True)
+clip_limit = st.sidebar.slider("CLAHE Clip Limit", 1.0, 5.0, 2.0)
+tile_size = st.sidebar.slider("CLAHE Tile Size", 4, 16, 8)
+
+st.sidebar.header("🔍 Prediction Control")
+threshold = st.sidebar.slider("Prediction Threshold", 0.0, 1.0, 0.5)
 
 # ---------------------- Model Loader ----------------------
 @st.cache_resource
