@@ -9,8 +9,7 @@ st.title("🛠️ Defect Detection with MobileNetV2")
 # Load model from unzipped folder
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model("mobilenetv2_finetuned")
-    return model
+    return tf.keras.models.load_model("mobilenetv2_model.h5")
 
 model = load_model()
 
