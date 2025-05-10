@@ -17,9 +17,6 @@ gray_enabled = st.sidebar.checkbox("Convert to Grayscale before CLAHE", value=Fa
 clip_limit = st.sidebar.slider("CLAHE Clip Limit", 1.0, 5.0, 2.0)
 tile_size = st.sidebar.slider("CLAHE Tile Size", 4, 16, 8)
 
-st.sidebar.header("🧬 Morphology Settings")
-min_blob_area = st.sidebar.slider("Min Contour Area to Show", 0, 500, 10)
-
 st.sidebar.header("🔍 Prediction Control")
 threshold = st.sidebar.slider("Prediction Threshold", 0.0, 1.0, 0.5)
 
@@ -66,10 +63,10 @@ def extract_morphology_features(image):
     cleaned = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
     contours, _ = cv2.findContours(cleaned, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    blob_areas = [cv2.contourArea(cnt) for cnt in contours if cv2.contourArea(cnt) >= min_blob_area]
+    blob_areas = [cv2.contourArea(cnt) for cnt in contours]
     total_blob_area = sum(blob_areas)
     output = np.stack([gray, gray, gray], axis=-1)
-    cv2.drawContours(output, [cnt for cnt in contours if cv2.contourArea(cnt) >= min_blob_area], -1, (0, 255, 0), 1)
+    cv2.drawContours(output, contours, -1, (0, 255, 0), 1)
 
     return {
         "num_blobs": len(blob_areas),
@@ -94,14 +91,14 @@ if uploaded:
 
     st.markdown(f"### Prediction: {label}")
     st.metric("Confidence", f"{confidence:.2%}")
-    st.progress(prediction)
+    st.progress(float(prediction))
     st.image(processed_rgb, caption="Preprocessed Image", use_column_width=True)
 
     if st.checkbox("Show Morphology Features"):
         features, morph_image = extract_morphology_features(processed[0])
         with st.expander("Morphology Feature Details"):
             st.json(features)
-        st.image(morph_image, caption="Contours (Filtered by Min Area)", use_column_width=True)
+        st.image(morph_image, caption="Contours", use_column_width=True)
 
 # ---------------------- Realtime Camera Input ----------------------
 st.markdown("---")
@@ -129,4 +126,4 @@ if camera_img:
         features, morph_image = extract_morphology_features(processed[0])
         with st.expander("Camera Morphology Feature Details"):
             st.json(features)
-        st.image(morph_image, caption="Camera Contours (Filtered)", use_column_width=True)
+        st.image(morph_image, caption="Camera Contours", use_column_width=True)
